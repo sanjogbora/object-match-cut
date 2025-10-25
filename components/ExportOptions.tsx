@@ -474,33 +474,6 @@ export default function ExportOptions({
                     </div>
                   </div>
 
-                  {/* Start Offset */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Start Offset: <span className="text-orange-600 font-semibold">{settings.beatSync.beatOffset.toFixed(1)}s</span>
-                    </label>
-                    <div className="relative py-2">
-                      <div className="absolute w-full h-0.5 bg-gray-300 top-1/2 -translate-y-1/2 rounded-full" />
-                      <input
-                        type="range"
-                        min="-2"
-                        max="2"
-                        step="0.1"
-                        value={settings.beatSync.beatOffset}
-                        onChange={(e) => handleSettingChange('beatSync', { 
-                          ...settings.beatSync, 
-                          beatOffset: parseFloat(e.target.value) 
-                        })}
-                        disabled={disabled}
-                        className="relative w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer disabled:opacity-50 slider-orange-small"
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Images start earlier</span>
-                      <span>Images start later</span>
-                    </div>
-                  </div>
-
                   {/* Format-specific explanations */}
                   <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                     <div className="flex items-start gap-2">

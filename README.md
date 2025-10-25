@@ -1,52 +1,139 @@
-# Match Cut Generator
+# Object Match Cut Generator
 
-Auto-Aligned Match Cut Video Generator - Create smooth eye-aligned animations from your photos.
+Auto-aligned match cut video generator for objects. Upload multiple photos of the same object shot in different environments, and automatically generate smooth match cut animations with perfect alignment.
 
 ## Features
 
-- **Automatic Face Detection**: Uses MediaPipe to detect faces and eye positions
-- **Perfect Eye Alignment**: Aligns all images so eyes stay in the same position
-- **Multiple Export Formats**: Export as GIF or MP4 with customizable settings
-- **Real-time Preview**: See your animation before exporting
-- **Browser-based Processing**: All processing happens locally - your images never leave your device
-- **Responsive Design**: Works on desktop and mobile devices
+- 🎯 **AI-Powered Object Segmentation** - SAM (Segment Anything Model) with GrabCut fallback
+- 🔍 **Feature-Based Alignment** - ORB keypoint detection with RANSAC for robust alignment
+- 🎨 **Mask Refinement Tools** - Brush tool to perfect object boundaries
+- 🎬 **Professional Export** - GIF, MP4 with customizable settings
+- 🎵 **Beat Sync** - Sync frame changes to music beats
+- 🔊 **Audio Effects** - Built-in or custom sound effects
+- 📱 **Client-Side Processing** - All processing happens in your browser
+- ⚡ **Fast Performance** - WebGPU acceleration with WASM fallback
 
-## How to Use
+## Tech Stack
 
-1. **Upload Images**: Drag and drop or select multiple photos with visible faces
-2. **Automatic Processing**: The app detects faces and aligns them based on eye positions
-3. **Preview Animation**: Watch your match cut animation in real-time
-4. **Customize Settings**: Adjust frame duration, resolution, and format
-5. **Export**: Download your finished animation as GIF or MP4
+- **Frontend:** Next.js 14, React 18, TypeScript, Tailwind CSS
+- **Computer Vision:** 
+  - SAM via ONNX Runtime Web (~40MB)
+  - OpenCV.js for ORB features and GrabCut fallback (~8MB)
+- **Video Export:** FFmpeg.wasm, MediaRecorder API
+- **Audio:** Web Audio API, beat detection algorithms
 
-## Technology Stack
+## Getting Started
 
-- **Frontend**: Next.js 14, React 18, TypeScript
-- **Face Detection**: MediaPipe Face Landmarker
-- **Image Processing**: HTML Canvas API
-- **Video Export**: FFmpeg.wasm, WebCodecs API
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
+### Prerequisites
 
-## Local Development
+- Node.js 18+ 
+- npm or yarn
+
+### Installation
 
 ```bash
+# Install dependencies
 npm install
+
+# Run development server
 npm run dev
+
+# Build for production
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+### Development
 
-## Browser Compatibility
+```bash
+# Start dev server
+npm run dev
 
-- **Chrome/Edge**: Full support (WebCodecs + FFmpeg.wasm)
-- **Firefox**: Limited support (FFmpeg.wasm only)
-- **Safari**: Limited support (FFmpeg.wasm only)
+# Lint code
+npm run lint
 
-## Privacy
+# Build production
+npm run build
 
-This application processes all images locally in your browser. No images are uploaded to any server, ensuring complete privacy and security of your photos.
+# Start production server
+npm start
+```
+
+## Project Structure
+
+```
+├── app/                    # Next.js app directory
+│   ├── page.tsx           # Main application page
+│   ├── layout.tsx         # Root layout
+│   └── globals.css        # Global styles
+├── components/            # React components
+│   ├── ImageUpload.tsx    # Drag-and-drop image upload
+│   ├── ImageGrid.tsx      # Image management grid
+│   ├── AnimationPreview.tsx # Preview with playback controls
+│   ├── ExportOptions.tsx  # Export settings panel
+│   └── ProcessingIndicator.tsx # Progress feedback
+├── lib/                   # Core libraries
+│   ├── objectSegmentation.ts # SAM + GrabCut segmentation
+│   ├── featureMatching.ts    # ORB + RANSAC alignment
+│   ├── imageAlignment.ts     # Canvas-based alignment
+│   ├── videoExport.ts        # FFmpeg export pipeline
+│   ├── audioManager.ts       # Audio synchronization
+│   ├── beatDetection.ts      # Beat detection algorithms
+│   ├── types.ts              # TypeScript definitions
+│   └── utils.ts              # Utility functions
+└── public/                # Static assets
+    ├── favicon.svg
+    └── *.mp3              # Built-in sound effects
+```
+
+## Usage
+
+1. **Upload Images** - Drag and drop or select 5-30 images of the same object
+2. **Draw Bounding Box** - On the first frame, draw a box around your object
+3. **Refine Mask** (Optional) - Use the brush tool to perfect the object boundary
+4. **Auto-Process** - AI segments and aligns all remaining frames
+5. **Preview** - Scrub through the animation, adjust frame order
+6. **Export** - Choose format (GIF/MP4), add audio, export!
+
+## Performance Targets
+
+| Metric | Target (Desktop) | Target (Mobile) |
+|--------|-----------------|-----------------|
+| Model load time | <5s | <10s |
+| Segmentation per frame | 2-5s (GPU) | 5-15s |
+| Feature matching | 100-200ms | 300-500ms |
+| Total processing (10 images) | <10s | <30s |
+| Export (WebM, 10 frames) | <3s | <10s |
+
+## Browser Support
+
+- Chrome/Edge 113+ (WebGPU support)
+- Safari 18+ (WebGPU support)
+- Firefox (WASM fallback)
+
+## Known Limitations
+
+- **3D Rotation:** Affine transforms only capture in-plane rotation
+- **Low Texture:** Objects with few features may have weak alignments
+- **Occlusion:** Partially hidden objects may fail alignment
+- **Max Images:** 30 images per project (memory constraints)
+
+## Contributing
+
+This is a personal project, but suggestions and bug reports are welcome!
 
 ## License
 
-MIT License - feel free to use and modify for your projects.
+MIT License - See LICENSE file for details
+
+## Acknowledgments
+
+- Built on top of the Face Match Cut Generator codebase
+- Uses MediaPipe SAM for segmentation
+- Uses OpenCV.js for feature detection
+- FFmpeg.wasm for video encoding
+
+## Development Status
+
+🚧 **In Active Development** - Migrating from face-based to object-based alignment
+
+See `.kiro/specs/object-tracking-matchcut-tool/` for detailed requirements and implementation plan.

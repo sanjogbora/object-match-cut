@@ -804,7 +804,7 @@ export class VideoExporter {
         '-c:v', 'libx264',
         '-pix_fmt', 'yuv420p',
         '-crf', '23',
-        '-preset', 'medium'
+        '-preset', 'faster'  // Faster export, slightly larger file size
       );
       
       // Add audio mapping and encoding if we have audio

@@ -171,7 +171,19 @@ export default function Home() {
       setIsAnalyzingBeats(true);
       try {
         const audioBuffer = await beatDetector.current!.loadAudioFile(exportSettings.beatSync.musicFile!);
-        const result = await beatDetector.current!.detectBeats(audioBuffer, exportSettings.beatSync.beatSensitivity);
+        
+        // SMART DETECTION: Let algorithm detect natural beats, don't force image count
+        const alignedImages = images.filter(img => img.status === 'aligned');
+        
+        console.log(`🎯 Smart beat detection: ${alignedImages.length} images available`);
+        console.log(`   Algorithm will detect natural beats, then use min(images, beats)`);
+        
+        // Don't pass targetBeatCount - let it detect naturally
+        const result = await beatDetector.current!.detectBeats(
+          audioBuffer, 
+          exportSettings.beatSync.beatSensitivity,
+          undefined  // Let algorithm find all natural beats
+        );
         setBeatDetectionResult(result);
         console.log('Beat detection result:', result);
       } catch (error) {
@@ -183,7 +195,7 @@ export default function Home() {
     };
 
     analyzeBeats();
-  }, [exportSettings.beatSync.enabled, exportSettings.beatSync.musicFile, exportSettings.beatSync.beatSensitivity]);
+  }, [exportSettings.beatSync.enabled, exportSettings.beatSync.musicFile, exportSettings.beatSync.beatSensitivity, images]);
 
   // Handle image upload
   const handleImagesUpload = useCallback(async (files: File[]) => {
