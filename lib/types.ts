@@ -3,13 +3,97 @@ export interface EyePoints {
   right: [number, number];
 }
 
+// Object Tracking Types
+export interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface ObjectMask {
+  data: Uint8Array;
+  width: number;
+  height: number;
+  confidence: number;
+  boundingBox: BoundingBox;
+  area: number; // Percentage of image area
+  solidity: number; // Shape solidity metric (0-1)
+}
+
+export interface FeaturePoint {
+  x: number;
+  y: number;
+  size: number;
+  angle: number;
+  response: number;
+  octave: number;
+  descriptor?: Float32Array;
+}
+
+export interface FeatureSet {
+  keypoints: FeaturePoint[];
+  descriptors: Float32Array;
+  count: number;
+}
+
+export interface FeatureMatch {
+  queryIdx: number;
+  trainIdx: number;
+  distance: number;
+}
+
+export interface MatchResult {
+  matches: FeatureMatch[];
+  inlierCount: number;
+  confidence: number;
+  transform?: AffineTransform;
+}
+
+export interface AffineTransform {
+  matrix: Float64Array; // 2x3 transformation matrix
+  rotation: number; // Rotation angle in degrees
+  scale: number; // Scale factor
+  translation: [number, number]; // Translation vector [x, y]
+}
+
+export interface SegmentationQuality {
+  confidence: number;
+  area: number;
+  solidity: number;
+  isValid: boolean;
+  warnings: string[];
+}
+
+export interface AlignmentQuality {
+  featureCount: number;
+  matchCount: number;
+  inlierCount: number;
+  confidence: number;
+  isValid: boolean;
+  warnings: string[];
+}
+
 export interface ImageData {
   id: string;
   file: File;
   url: string;
   aligned: boolean;
+  
+  // Legacy face tracking (keep for backward compatibility)
   eyePoints?: EyePoints;
   faceResult?: FaceDetectionResult;
+  
+  // Object tracking (new)
+  boundingBox?: BoundingBox;
+  mask?: ObjectMask;
+  features?: FeatureSet;
+  matches?: MatchResult;
+  transform?: AffineTransform;
+  segmentationQuality?: SegmentationQuality;
+  alignmentQuality?: AlignmentQuality;
+  
+  // Common properties
   alignedCanvas?: HTMLCanvasElement;
   processedUrl?: string;
   error?: string; // Error message if processing failed
@@ -41,7 +125,7 @@ export interface ExportSettings {
   audioVolume: number;
   beatSync: BeatSyncSettings;
   loop: boolean;
-  alignmentMode: 'full' | 'face-crop' | 'smart-frame';
+  alignmentMode: 'full' | 'face-crop' | 'object-crop' | 'smart-frame';
 }
 
 export interface ResolutionConfig {
@@ -51,7 +135,10 @@ export interface ResolutionConfig {
 
 export type ProcessingStep = 
   | 'idle' 
-  | 'detecting_faces' 
+  | 'detecting_faces'  // Legacy
+  | 'segmenting_objects' // New
+  | 'extracting_features' // New
+  | 'matching_features' // New
   | 'aligning_images' 
   | 'generating_preview' 
   | 'exporting_video' 
@@ -95,11 +182,13 @@ export interface FaceDetectionResult {
   };
 }
 
-export interface AlignmentTransform {
-  rotation: number;
-  scale: number;
-  translation: [number, number];
-  matrix: number[][];
+// Object Segmentation Result
+export interface ObjectSegmentationResult {
+  mask: ObjectMask;
+  boundingBox: BoundingBox;
+  confidence: number;
+  quality: SegmentationQuality;
+  method: 'sam' | 'grabcut';
 }
 
 export interface AnimationFrame {
@@ -124,4 +213,42 @@ export interface AppState {
   isPlaying: boolean;
   currentFrame: number;
   audioSettings: AudioSettings;
+}
+
+// Object Tracking Configuration
+export interface ObjectTrackingConfig {
+  segmentationMethod: 'sam' | 'grabcut' | 'auto';
+  featureDetector: 'orb' | 'sift' | 'akaze';
+  featureCount: number; // 500-2000
+  matcherType: 'bruteforce' | 'flann';
+  ransacThreshold: number; // 1-5 pixels
+  minInliers: number; // Minimum inliers for valid alignment
+  minMatches: number; // Minimum matches to attempt alignment
+  useGaussianBlur: boolean;
+  blurSigma: number;
+}
+
+export const DEFAULT_TRACKING_CONFIG: ObjectTrackingConfig = {
+  segmentationMethod: 'auto',
+  featureDetector: 'orb',
+  featureCount: 1000,
+  matcherType: 'bruteforce',
+  ransacThreshold: 3.0,
+  minInliers: 50,
+  minMatches: 30,
+  useGaussianBlur: true,
+  blurSigma: 1.0,
+};
+
+// Processing Statistics
+export interface ProcessingStats {
+  totalImages: number;
+  processedImages: number;
+  alignedImages: number;
+  failedImages: number;
+  averageFeatureCount: number;
+  averageMatchCount: number;
+  averageInlierCount: number;
+  averageConfidence: number;
+  processingTime: number; // milliseconds
 }

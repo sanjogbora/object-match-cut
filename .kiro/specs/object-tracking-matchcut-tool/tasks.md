@@ -12,10 +12,16 @@
   - Update app/layout.tsx metadata (title, description, keywords)
   - Update header branding in app/page.tsx from "Match Cut Generator" to "Object Match Cut Generator"
   - Update hero section copy to reference objects instead of faces
+
+
+
   - _Requirements: 10.3_
 
 - [ ] 2. Extend type definitions for object tracking
   - Add ObjectMask, BoundingBox, FeaturePoint, and MatchResult interfaces to lib/types.ts
+
+
+
   - Update ImageData interface to include mask, features, and transform properties
   - Add SegmentationQuality and AlignmentQuality types
   - Keep existing ExportSettings, AnimationFrame, and other types (already working)
@@ -23,22 +29,34 @@
 
 - [ ] 3. Verify existing UI components work as-is
   - Test ImageUpload component (already supports drag-and-drop, validation)
+
+
+
   - Test ImageGrid component (already has reordering, status indicators, error handling)
   - Test AnimationPreview component (already has scrubbing, playback controls)
   - Test ExportOptions component (already has format selection, beat sync, audio)
   - No changes needed - these are production-ready
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
+
+
+
 ## Phase 2: Replace Face Detection with Object Segmentation
 
 - [ ] 4. Create SAM-based object segmentation engine
   - Create new lib/objectSegmentation.ts file
   - Set up ONNX Runtime Web for SAM model loading and inference
+
+
+
   - Implement model downloading and IndexedDB caching (reuse pattern from faceDetection.ts)
   - Create segmentObject() method that accepts bounding box input
   - Add mask validation logic (area >5%, solidity >0.6, confidence >0.7)
   - Return mask data in format compatible with existing ImageData type
   - _Requirements: 2.1, 2.2, 2.4, 2.5_
+
+
+
 
 - [ ] 5. Add GrabCut fallback segmentation
   - Install opencv.js package if not already present
@@ -48,11 +66,15 @@
   - Add error handling and user notifications
   - _Requirements: 2.3_
 
+
+
+
 - [ ] 6. Build bounding box drawing UI
   - Create new components/BoundingBoxDrawer.tsx component
   - Implement click-and-drag rectangle drawing on canvas
   - Add visual feedback (crosshair cursor, preview rectangle)
   - Integrate with first frame in app/page.tsx workflow
+
   - Store bounding box coordinates in ImageData
   - _Requirements: 2.1, 3.3_
 
@@ -62,24 +84,34 @@
   - Add add/remove mode toggle
   - Draw mask overlay with transparency
   - Update mask data on brush strokes
+
+
+
   - Add accept/reject buttons
   - _Requirements: 3.1, 3.2, 3.4, 3.5_
 
 ## Phase 3: Replace Eye Alignment with Feature-Based Alignment
 
-- [ ] 8. Create ORB feature detection system
+- [x] 8. Create ORB feature detection system
+
+
   - Create new lib/featureMatching.ts file
   - Integrate OpenCV.js ORB detector (may already be available)
   - Implement extractFeatures() that works within mask boundaries
   - Extract 500-1000 keypoints with BRIEF descriptors
   - Add Gaussian blur preprocessing (σ=1.0)
   - Return FeatureSet with keypoints and descriptors
+
+
   - _Requirements: 4.1, 4.2, 4.3_
 
 - [ ] 9. Implement feature matching and RANSAC alignment
   - Add matchFeatures() method to featureMatching.ts
   - Use BruteForceMatcher with Hamming distance
   - Apply Lowe ratio test (0.75) for filtering
+
+
+
   - Implement RANSAC with cv.estimateAffinePartial2D()
   - Set reprojection threshold to 3.0 pixels
   - Validate minimum 50 inliers, warn if <30 matches
@@ -88,6 +120,7 @@
 
 - [ ] 10. Adapt imageAlignment.ts for object alignment
   - Rename alignImageFaceCrop() → alignImageObjectCrop()
+
   - Replace eye-based transform with feature-based transform
   - Keep canvas warping logic (cv.warpAffine with padding)
   - Reuse smoothing/interpolation code (already excellent)

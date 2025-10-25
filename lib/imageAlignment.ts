@@ -1,13 +1,28 @@
-import { EyePoints, AlignmentTransform, ResolutionConfig, FaceDetectionResult, FaceLandmark } from './types';
+import { 
+  EyePoints, 
+  ResolutionConfig, 
+  FaceDetectionResult, 
+  FaceLandmark,
+  AffineTransform,
+  ObjectMask 
+} from './types';
 
-export type AlignmentMode = 'full' | 'face-crop' | 'smart-frame';
+export type AlignmentMode = 'full' | 'face-crop' | 'object-crop' | 'smart-frame';
+
+// Legacy transform type for face-based alignment (uses nested arrays)
+interface LegacyAlignmentTransform {
+  rotation: number;
+  scale: number;
+  translation: [number, number];
+  matrix: number[][];
+}
 
 export class ImageAligner {
   private targetEyeDistance = 0.35; // Target eye distance as proportion of canvas width
   private targetEyeY = 0.4; // Target eye Y position as proportion of canvas height
   
   // Enhanced alignment features
-  private previousTransforms: AlignmentTransform[] = [];
+  private previousTransforms: LegacyAlignmentTransform[] = [];
   private smoothingFactor = 0.15; // Temporal smoothing to reduce jitter
   private useSubPixelPrecision = true;
 
@@ -75,7 +90,7 @@ export class ImageAligner {
   private calculateAlignmentTransform(
     eyePoints: EyePoints,
     targetResolution: ResolutionConfig
-  ): AlignmentTransform {
+  ): LegacyAlignmentTransform {
     const { left, right } = eyePoints;
     const { width, height } = targetResolution;
 
@@ -97,7 +112,7 @@ export class ImageAligner {
     const rotation = -eyeAngle; // Negative to counter-rotate
 
     // Create base transform
-    const transform: AlignmentTransform = {
+    const transform: LegacyAlignmentTransform = {
       rotation: rotation * (180 / Math.PI), // Convert to degrees
       scale,
       translation: [targetEyeCenterX - eyeCenterX * scale, targetEyeCenterY - eyeCenterY * scale],
@@ -118,7 +133,7 @@ export class ImageAligner {
     ];
   }
 
-  private applySmoothingToTransform(transform: AlignmentTransform): AlignmentTransform {
+  private applySmoothingToTransform(transform: LegacyAlignmentTransform): LegacyAlignmentTransform {
     if (this.previousTransforms.length === 0) {
       this.previousTransforms.push(transform);
       return transform;
@@ -127,7 +142,7 @@ export class ImageAligner {
     const recent = this.previousTransforms[this.previousTransforms.length - 1];
     const alpha = this.smoothingFactor;
 
-    const smoothed: AlignmentTransform = {
+    const smoothed: LegacyAlignmentTransform = {
       rotation: this.interpolateAngle(recent.rotation, transform.rotation, alpha),
       scale: recent.scale * (1 - alpha) + transform.scale * alpha,
       translation: [
@@ -533,5 +548,239 @@ export class ImageAligner {
     };
 
     return this.alignImageFull(sourceImage, eyePoints, previewResolution);
+  }
+
+  // ========== OBJECT TRACKING ALIGNMENT METHODS ==========
+
+  /**
+   * Align image using feature-based affine transform
+   * This is the main method for object tracking alignment
+   */
+  alignImageWithTransform(
+    sourceImage: HTMLImageElement,
+    transform: AffineTransform,
+    targetResolution: ResolutionConfig
+  ): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = targetResolution.width;
+    canvas.height = targetResolution.height;
+    const ctx = canvas.getContext('2d')!;
+
+    // Enable high-quality rendering
+    if (this.useSubPixelPrecision) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+    }
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Apply affine transform
+    ctx.save();
+    
+    // The transform matrix is [a, b, c, d, tx, ty]
+    // where the transformation is: x' = a*x + c*y + tx, y' = b*x + d*y + ty
+    const m = transform.matrix;
+    ctx.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]);
+    
+    ctx.drawImage(sourceImage, 0, 0);
+    ctx.restore();
+
+    return canvas;
+  }
+
+  /**
+   * Align image with object crop (similar to face-crop but for objects)
+   */
+  alignImageObjectCrop(
+    sourceImage: HTMLImageElement,
+    transform: AffineTransform,
+    mask: ObjectMask,
+    targetResolution: ResolutionConfig,
+    padding: number = 0.2
+  ): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = targetResolution.width;
+    canvas.height = targetResolution.height;
+    const ctx = canvas.getContext('2d')!;
+
+    // Enable high-quality rendering
+    if (this.useSubPixelPrecision) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+    }
+
+    const { boundingBox } = mask;
+    const { width: canvasWidth, height: canvasHeight } = targetResolution;
+
+    // Calculate padded crop region
+    const paddingX = boundingBox.width * padding;
+    const paddingY = boundingBox.height * padding;
+
+    const cropLeft = Math.max(0, boundingBox.x - paddingX);
+    const cropTop = Math.max(0, boundingBox.y - paddingY);
+    const cropRight = Math.min(sourceImage.width, boundingBox.x + boundingBox.width + paddingX);
+    const cropBottom = Math.min(sourceImage.height, boundingBox.y + boundingBox.height + paddingY);
+
+    const cropWidth = cropRight - cropLeft;
+    const cropHeight = cropBottom - cropTop;
+
+    // Calculate scale to fit crop to canvas
+    const scaleX = canvasWidth / cropWidth;
+    const scaleY = canvasHeight / cropHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    // Calculate center position
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+    const cropCenterX = cropLeft + cropWidth / 2;
+    const cropCenterY = cropTop + cropHeight / 2;
+
+    ctx.save();
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    // Move to center
+    ctx.translate(centerX, centerY);
+
+    // Apply rotation from transform
+    const rotation = transform.rotation * (Math.PI / 180);
+    ctx.rotate(rotation);
+
+    // Apply scale
+    ctx.scale(scale, scale);
+
+    // Draw image centered on crop region
+    ctx.drawImage(
+      sourceImage,
+      -cropCenterX,
+      -cropCenterY
+    );
+
+    ctx.restore();
+
+    return canvas;
+  }
+
+  /**
+   * Normalize object scale to target height
+   */
+  normalizeObjectScale(
+    sourceImage: HTMLImageElement,
+    mask: ObjectMask,
+    targetHeight: number = 400
+  ): { scale: number; canvas: HTMLCanvasElement } {
+    const objectHeight = mask.boundingBox.height;
+    const scale = targetHeight / objectHeight;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(sourceImage.width * scale);
+    canvas.height = Math.round(sourceImage.height * scale);
+
+    const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+
+    return { scale, canvas };
+  }
+
+  /**
+   * Apply warp with border padding (for cv.warpAffine equivalent)
+   */
+  warpAffineWithPadding(
+    sourceImage: HTMLImageElement,
+    transform: AffineTransform,
+    targetResolution: ResolutionConfig,
+    borderPadding: number = 50
+  ): HTMLCanvasElement {
+    const paddedWidth = targetResolution.width + borderPadding * 2;
+    const paddedHeight = targetResolution.height + borderPadding * 2;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = paddedWidth;
+    canvas.height = paddedHeight;
+    const ctx = canvas.getContext('2d')!;
+
+    // Enable high-quality rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Fill with black background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, paddedWidth, paddedHeight);
+
+    // Apply transform with padding offset
+    ctx.save();
+    ctx.translate(borderPadding, borderPadding);
+    
+    const m = transform.matrix;
+    ctx.setTransform(m[0], m[1], m[2], m[3], m[4] + borderPadding, m[5] + borderPadding);
+    
+    ctx.drawImage(sourceImage, 0, 0);
+    ctx.restore();
+
+    return canvas;
+  }
+
+  /**
+   * Smooth transform using temporal filtering (reduces jitter)
+   * Note: Uses separate storage from legacy face-based transforms
+   */
+  private previousAffineTransforms: AffineTransform[] = [];
+  
+  smoothTransform(transform: AffineTransform): AffineTransform {
+    if (this.previousAffineTransforms.length === 0) {
+      this.previousAffineTransforms.push(transform);
+      return transform;
+    }
+
+    const recent = this.previousAffineTransforms[this.previousAffineTransforms.length - 1];
+    const alpha = this.smoothingFactor;
+
+    // Smooth rotation
+    let rotationDiff = transform.rotation - recent.rotation;
+    if (rotationDiff > 180) rotationDiff -= 360;
+    if (rotationDiff < -180) rotationDiff += 360;
+    const smoothedRotation = recent.rotation + rotationDiff * alpha;
+
+    // Smooth scale
+    const smoothedScale = recent.scale * (1 - alpha) + transform.scale * alpha;
+
+    // Smooth translation
+    const smoothedTranslation: [number, number] = [
+      recent.translation[0] * (1 - alpha) + transform.translation[0] * alpha,
+      recent.translation[1] * (1 - alpha) + transform.translation[1] * alpha,
+    ];
+
+    // Reconstruct matrix with smoothed values
+    const rad = smoothedRotation * (Math.PI / 180);
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+
+    const smoothedMatrix = new Float64Array([
+      smoothedScale * cos,
+      smoothedScale * sin,
+      -smoothedScale * sin,
+      smoothedScale * cos,
+      smoothedTranslation[0],
+      smoothedTranslation[1],
+    ]);
+
+    const smoothedTransform: AffineTransform = {
+      matrix: smoothedMatrix,
+      rotation: smoothedRotation,
+      scale: smoothedScale,
+      translation: smoothedTranslation,
+    };
+
+    this.previousAffineTransforms.push(smoothedTransform);
+
+    // Keep only recent transforms
+    if (this.previousAffineTransforms.length > 5) {
+      this.previousAffineTransforms.shift();
+    }
+
+    return smoothedTransform;
   }
 }
