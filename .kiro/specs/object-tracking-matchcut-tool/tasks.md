@@ -4,7 +4,10 @@
 
 **Note:** This project builds upon an existing face-based matchcut tool. The UI, export pipeline, audio system, and project structure are already production-ready. We only need to replace face detection with object segmentation and adapt the alignment logic.
 
-- [ ] 1. Update project metadata and branding
+- [x] 1. Update project metadata and branding
+
+
+
   - Update package.json name and description for object tracking
   - Update app/layout.tsx metadata (title, description, keywords)
   - Update header branding in app/page.tsx from "Match Cut Generator" to "Object Match Cut Generator"

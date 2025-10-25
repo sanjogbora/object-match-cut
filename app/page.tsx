@@ -573,28 +573,14 @@ export default function Home() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Eye className="w-5 h-5 text-white" />
+                <Zap className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-xl font-bold text-gray-900">
-                Match Cut Generator
+                Object Match Cut Generator
               </h1>
             </div>
             
             <div className="flex items-center space-x-4">
-              <a 
-                href="https://www.producthunt.com/products/face-match-cut-generator?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-face&#0045;match&#0045;cut&#0045;generator" 
-                target="_blank"
-                className="hover:opacity-80 transition-opacity"
-              >
-                <img 
-                  src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1015749&theme=light&t=1757742596193" 
-                  alt="Face Match Cut Generator - Upload Photos, Generate Eye-Aligned Animations in Seconds | Product Hunt" 
-                  style={{ width: '250px', height: '54px' }} 
-                  width="250" 
-                  height="54" 
-                />
-              </a>
-              
               <a
                 href="https://www.instagram.com/sanjogsays/"
                 target="_blank"
@@ -616,11 +602,11 @@ export default function Home() {
               <Zap className="w-8 h-8 text-blue-600" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Create Eye-Aligned Match Cut Videos
+              Create Object-Aligned Match Cut Videos
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Upload multiple photos and automatically generate smooth match cut animations 
-              with perfect eye alignment. Export as GIF or MP4 with customizable settings.
+              Upload multiple photos of the same object and automatically generate smooth match cut animations 
+              with AI-powered alignment. Export as GIF or MP4 with customizable settings.
             </p>
           </div>
         )}
@@ -771,7 +757,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-600">
             <p className="mb-2">
-              Built with MediaPipe, FFmpeg.wasm, and React
+              Built with SAM, OpenCV.js, FFmpeg.wasm, and React
             </p>
             <p className="text-sm">
               All processing happens in your browser - your images never leave your device

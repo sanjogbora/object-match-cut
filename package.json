@@ -1,7 +1,7 @@
 {
-  "name": "match-cut-generator",
-  "version": "1.0.0",
-  "description": "Auto-Aligned Match Cut Video Generator",
+  "name": "object-match-cut-generator",
+  "version": "2.0.0",
+  "description": "AI-Powered Object Tracking Match Cut Video Generator",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -5,10 +5,10 @@ import { Analytics } from "@vercel/analytics/next"
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Match Cut Generator',
-  description: 'Auto-aligned Match Cut Video Generator - Create smooth eye-aligned animations from your photos',
-  keywords: ['match cut', 'video generator', 'face alignment', 'animation', 'gif', 'mp4'],
-  authors: [{ name: 'Match Cut Generator' }],
+  title: 'Object Match Cut Generator',
+  description: 'AI-Powered Object Tracking Match Cut Video Generator - Create smooth object-aligned animations from your photos',
+  keywords: ['match cut', 'video generator', 'object tracking', 'object alignment', 'animation', 'gif', 'mp4', 'SAM', 'computer vision'],
+  authors: [{ name: 'Object Match Cut Generator' }],
   viewport: 'width=device-width, initial-scale=1',
 }
 
